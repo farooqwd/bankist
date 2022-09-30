@@ -63,6 +63,15 @@ const inputClosePin = document.querySelector('.form__input--pin');
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
+// DOM
+// TOTAL BALANCE
+labelBalance.textContent = `${account1.totalBalance}€`;
+//DEPOSITS
+labelSumIn.textContent = `${account1.deposits}€`;
+//WITHDRAWALS
+labelSumOut.textContent = `${account1.withdrawals}€`;
+//INTEREST RATE
+
 // LECTURES
 
 const currencies = new Map([
@@ -81,12 +90,83 @@ const displayMovements = function (movements) {
       <div class="movements__row">
         <div class="movements__type movements__type--${type}">${i + 1}</div>
         <div class="movements__type movements__type--${type}">${type}</div>
-        <div class="movements__value">${mov}</div>
-      </div>`;
+        <div class="movements__value">${mov}€</div>
+      </div>
+      `;
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
 };
 displayMovements(account1.movements);
+
+// CALCULTING BALANCE OF USERS through reduce method
+
+const calcBalance = function (accs) {
+  accs.forEach(acc => {
+    console.log(
+      (acc.totalBalance = acc.movements.reduce(
+        (accum, curr) => accum + curr,
+        0
+      ))
+    );
+    //TOTAL BALANCE
+    labelBalance.textContent = `${account1.totalBalance}€`;
+  });
+};
+calcBalance(accounts);
+
+//ACCOUNT SUMMARY
+
+const calcSummary = function (accs) {
+  accs.forEach(acc => {
+    acc.deposits = acc.movements
+      .filter(mov => mov > 0)
+      .reduce((accum, curr) => accum + curr, 0);
+
+    //DEPOSITS
+    labelSumIn.textContent = `${account1.deposits}€`;
+    //
+    acc.withdrawals = acc.movements
+      .filter(mov => mov < 0)
+      .reduce((accum, curr) => accum + curr, 0);
+
+    //WITHDRAWALS
+    labelSumOut.textContent = `${Math.abs(account1.withdrawals)}€`;
+    //
+    acc.interests = acc.movements.reduce(
+      (accum, curr) => accum + curr * 0.012,
+      0
+    );
+    //INTEREST RATE
+    labelSumInterest.textContent = `${account1.interests}€`;
+  });
+};
+calcSummary(accounts);
+
+console.log(account1.deposits);
+console.log(account1.withdrawals);
+console.log(account1.interests);
+
+//CONVERT EURO TO USD
+
+const convertCurrency = function (accs) {
+  accs.forEach(acc => {
+    acc.convertedCurrency = acc.movements
+      .filter(mov => {
+        if (mov > 0) return mov;
+      })
+      .map(mov => mov * 0.98);
+    acc.totalBalanceUsd = acc.convertedCurrency.reduce(
+      (accum, curr) => accum + curr,
+      0
+    );
+  });
+};
+convertCurrency(accounts);
+// console.log(account1.convertedCurrency);
+// console.log(account1.totalBalanceUsd);
+// console.log(account2.totalBalanceUsd);
+
+// CALCULATING USER NAME FROM OWNER PROPERTYOF THE ACCOUNT OBJECT
 
 const createUsernames = function (accs) {
   accs.forEach(acc => {
@@ -100,7 +180,14 @@ const createUsernames = function (accs) {
   });
 };
 createUsernames(accounts);
-console.log(account1.userName);
-console.log(account2.userName);
-console.log(account3.userName);
-console.log(account4.userName);
+
+//
+// // DOM
+// // TOTAL BALANCE
+// labelBalance.textContent = `${account1.totalBalance}€`;
+// //DEPOSITS
+// labelSumIn.textContent = `${account1.deposits}€`;
+// //WITHDRAWALS
+// labelSumOut.textContent = `${Math.abs(account1.withdrawals)}€`;
+// //INTEREST RATE
+// labelSumInterest.textContent = `${account1.interests}€`;
