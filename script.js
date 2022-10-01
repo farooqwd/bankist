@@ -63,15 +63,6 @@ const inputClosePin = document.querySelector('.form__input--pin');
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-// DOM
-// TOTAL BALANCE
-labelBalance.textContent = `${account1.totalBalance}€`;
-//DEPOSITS
-labelSumIn.textContent = `${account1.deposits}€`;
-//WITHDRAWALS
-labelSumOut.textContent = `${account1.withdrawals}€`;
-//INTEREST RATE
-
 // LECTURES
 
 const currencies = new Map([
@@ -82,69 +73,20 @@ const currencies = new Map([
 
 /////////////////////////////////////////////////
 
-const displayMovements = function (movements) {
-  containerMovements.innerHTML = '';
-  movements.forEach((mov, i) => {
-    const type = mov > 0 ? 'deposit' : 'withdrawal';
-    const html = `
-      <div class="movements__row">
-        <div class="movements__type movements__type--${type}">${i + 1}</div>
-        <div class="movements__type movements__type--${type}">${type}</div>
-        <div class="movements__value">${mov}€</div>
-      </div>
-      `;
-    containerMovements.insertAdjacentHTML('afterbegin', html);
-  });
-};
-displayMovements(account1.movements);
+// CALCULATING USER NAME FROM OWNER PROPERTY OF THE ACCOUNT OBJECT
 
-// CALCULTING BALANCE OF USERS through reduce method
-
-const calcBalance = function (accs) {
+const createUsernames = function (accs) {
   accs.forEach(acc => {
-    console.log(
-      (acc.totalBalance = acc.movements.reduce(
-        (accum, curr) => accum + curr,
-        0
-      ))
-    );
-    //TOTAL BALANCE
-    labelBalance.textContent = `${account1.totalBalance}€`;
+    acc.userName = acc.owner
+      .toLowerCase()
+      .split(' ')
+      .map(name => {
+        return name[0];
+      })
+      .join('');
   });
 };
-calcBalance(accounts);
-
-//ACCOUNT SUMMARY
-
-const calcSummary = function (accs) {
-  accs.forEach(acc => {
-    acc.deposits = acc.movements
-      .filter(mov => mov > 0)
-      .reduce((accum, curr) => accum + curr, 0);
-
-    //DEPOSITS
-    labelSumIn.textContent = `${account1.deposits}€`;
-    //
-    acc.withdrawals = acc.movements
-      .filter(mov => mov < 0)
-      .reduce((accum, curr) => accum + curr, 0);
-
-    //WITHDRAWALS
-    labelSumOut.textContent = `${Math.abs(account1.withdrawals)}€`;
-    //
-    acc.interests = acc.movements.reduce(
-      (accum, curr) => accum + curr * 0.012,
-      0
-    );
-    //INTEREST RATE
-    labelSumInterest.textContent = `${account1.interests}€`;
-  });
-};
-calcSummary(accounts);
-
-console.log(account1.deposits);
-console.log(account1.withdrawals);
-console.log(account1.interests);
+createUsernames(accounts);
 
 //CONVERT EURO TO USD
 
@@ -162,32 +104,106 @@ const convertCurrency = function (accs) {
   });
 };
 convertCurrency(accounts);
-// console.log(account1.convertedCurrency);
-// console.log(account1.totalBalanceUsd);
-// console.log(account2.totalBalanceUsd);
 
-// CALCULATING USER NAME FROM OWNER PROPERTYOF THE ACCOUNT OBJECT
+//global variable for current user
+let currentAccount;
 
-const createUsernames = function (accs) {
-  accs.forEach(acc => {
-    acc.userName = acc.owner
-      .toLowerCase()
-      .split(' ')
-      .map(name => {
-        return name[0];
-      })
-      .join('');
+// CURRENT USER // CALC THE CURRENT ACCOUNT FROM THE UI DATA SUBMITTED
+btnLogin.addEventListener('click', function (e) {
+  e.preventDefault();
+  currentAccount = accounts.find(
+    acc => acc.userName === inputLoginUsername.value
+  );
+  if (currentAccount?.pin === Number(inputLoginPin.value)) {
+    //DISPLAY A WELCOME MESSAGE TO THE CURRENT USER
+    labelWelcome.textContent = `Welcome back ${
+      currentAccount.owner.split(' ')[0]
+    }`;
+
+    // CHANGING THE OPACITY OF CURRENT ACCOUNT PAGE FROM 0
+    containerApp.style.opacity = 100;
+
+    //clear inputfields
+    inputLoginUsername.value = inputLoginPin.value = '';
+
+    // DISPLAYING THE DEPOSITS AND WITHDRAWALS OF CURRENT USER BASED ON HIS MOVEMENTS ARRAY
+    displayMovements(currentAccount.movements);
+
+    // CALLING THE calcSummary FUNCTION TO CALC THE SUMMARY FOR THE CURRENT USER
+    calcSummary(currentAccount);
+  }
+});
+
+// DISPLAYING THE DEPOSITS AND WITHDRAWALS OF CURRENT USER BASED ON HIS MOVEMENTS ARRAY
+const displayMovements = function (movements) {
+  containerMovements.innerHTML = '';
+  movements.forEach((mov, i) => {
+    const type = mov > 0 ? 'deposit' : 'withdrawal';
+    const html = `
+      <div class="movements__row">
+        <div class="movements__type movements__type--${type}">${i + 1}</div>
+        <div class="movements__type movements__type--${type}">${type}</div>
+        <div class="movements__value">${mov}€</div>
+      </div>
+      `;
+    containerMovements.insertAdjacentHTML('afterbegin', html);
   });
 };
-createUsernames(accounts);
 
-//
-// // DOM
-// // TOTAL BALANCE
-// labelBalance.textContent = `${account1.totalBalance}€`;
-// //DEPOSITS
-// labelSumIn.textContent = `${account1.deposits}€`;
-// //WITHDRAWALS
-// labelSumOut.textContent = `${Math.abs(account1.withdrawals)}€`;
-// //INTEREST RATE
-// labelSumInterest.textContent = `${account1.interests}€`;
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  // const amount = Number(inputTransferAmount.value)
+  // const reciverAccount = inputTransferTo.value
+  // if (reciverAccount === )
+  const tranferFunds = function (accs) {
+    const amount = Number(inputTransferAmount.value);
+    const reciverAccount = accounts.find(
+      acc => acc.userName === inputTransferTo.value
+    );
+    if (
+      amount > 0 &&
+      reciverAccount &&
+      amount <= currentAccount.totalBalance &&
+      reciverAccount.userName !== currentAccount.userName
+    ) {
+      currentAccount.movements.push(-amount);
+      reciverAccount.movements.push(amount);
+    }
+  };
+  tranferFunds(accounts);
+  //clear inputfields
+  inputTransferTo.value = inputTransferAmount.value = '';
+  //upadte UI
+  calcSummary(currentAccount);
+  displayMovements(currentAccount.movements);
+});
+
+//CALCULATING THE TOTAL BALANCE AND SUMMARY FOR THE CURRENT USER
+const calcSummary = function (acc) {
+  // CALCULATING TOTAL BALANCE
+  acc.totalBalance = acc.movements.reduce((accum, curr) => accum + curr, 0);
+  //TOTAL BALANCE DISPLAYING IN UI
+  labelBalance.textContent = `${acc.totalBalance}€`;
+
+  // CALCULATING TOTAL DEPOSIT OF CURRENT USER
+  acc.deposits = acc.movements
+    .filter(mov => mov > 0)
+    .reduce((accum, curr) => accum + curr, 0);
+  //TOTAL DEPOSITS DISPLAYING IN UI
+  labelSumIn.textContent = `${acc.deposits}€`;
+
+  //CALCULATING THE WITHDRAWALS FOR THE CURRENT USER
+  acc.withdrawals = acc.movements
+    .filter(mov => mov < 0)
+    .reduce((accum, curr) => accum + curr, 0);
+  //TOTAL WITHDRAWALS DISPLAYING IN UI
+  labelSumOut.textContent = `${Math.abs(acc.withdrawals)}€`;
+
+  //CALCULATING THE INTEREST FOR THE CURRENT USER
+  acc.interests = acc.movements.reduce(
+    (accum, curr) => accum + (curr * acc.interestRate) / 100,
+    0
+  );
+  //TOTAL INTERESTS DISPLAYING IN UI
+  labelSumInterest.textContent = `${acc.interests}€`;
+};
