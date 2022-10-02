@@ -134,27 +134,24 @@ btnLogin.addEventListener('click', function (e) {
   }
 });
 
-// DISPLAYING THE DEPOSITS AND WITHDRAWALS OF CURRENT USER BASED ON HIS MOVEMENTS ARRAY
-const displayMovements = function (movements) {
-  containerMovements.innerHTML = '';
-  movements.forEach((mov, i) => {
-    const type = mov > 0 ? 'deposit' : 'withdrawal';
-    const html = `
-      <div class="movements__row">
-        <div class="movements__type movements__type--${type}">${i + 1}</div>
-        <div class="movements__type movements__type--${type}">${type}</div>
-        <div class="movements__value">${mov}€</div>
-      </div>
-      `;
-    containerMovements.insertAdjacentHTML('afterbegin', html);
-  });
-};
+//////////////////////////////////////////////////////////////////////////////
+// requesting loan
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputLoanAmount.value);
+  if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
+    currentAccount.movements.push(amount);
+    calcSummary(currentAccount);
+    displayMovements(currentAccount.movements);
+  } else {
+    console.log('loan not approved');
+  }
+});
 
+////////////////////////////////////////////////////////////////////////////////
+//closing the account funtionality
 btnTransfer.addEventListener('click', function (e) {
   e.preventDefault();
-  // const amount = Number(inputTransferAmount.value)
-  // const reciverAccount = inputTransferTo.value
-  // if (reciverAccount === )
   const tranferFunds = function (accs) {
     const amount = Number(inputTransferAmount.value);
     const reciverAccount = accounts.find(
@@ -176,6 +173,22 @@ btnTransfer.addEventListener('click', function (e) {
   //upadte UI
   calcSummary(currentAccount);
   displayMovements(currentAccount.movements);
+});
+
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+  if (
+    inputCloseUsername.value === currentAccount.userName &&
+    Number(inputClosePin.value) === currentAccount.pin
+  ) {
+    const index = accounts.findIndex(
+      acc => acc.userName === currentAccount.userName
+    );
+    accounts.splice(index, 1);
+    containerApp.style.opacity = 0;
+  }
+  inputCloseUsername.value = inputClosePin.value = '';
+  console.log(accounts);
 });
 
 //CALCULATING THE TOTAL BALANCE AND SUMMARY FOR THE CURRENT USER
@@ -207,3 +220,31 @@ const calcSummary = function (acc) {
   //TOTAL INTERESTS DISPLAYING IN UI
   labelSumInterest.textContent = `${acc.interests}€`;
 };
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// DISPLAYING THE DEPOSITS AND WITHDRAWALS OF CURRENT USER BASED ON HIS MOVEMENTS ARRAY
+const displayMovements = function (movements, sort = false) {
+  //sorting
+  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
+
+  containerMovements.innerHTML = '';
+  movs.forEach((mov, i) => {
+    const type = mov > 0 ? 'deposit' : 'withdrawal';
+    const html = `
+      <div class="movements__row">
+        <div class="movements__type movements__type--${type}">${i + 1}</div>
+        <div class="movements__type movements__type--${type}">${type}</div>
+        <div class="movements__value">${mov}€</div>
+      </div>
+      `;
+    containerMovements.insertAdjacentHTML('afterbegin', html);
+  });
+};
+
+// g variable for sorting
+let sorted = false;
+btnSort.addEventListener('click', function (e) {
+  e.preventDefault();
+  displayMovements(currentAccount.movements, !sorted);
+  sorted = !sorted;
+});
